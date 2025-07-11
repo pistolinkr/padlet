@@ -7,26 +7,41 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Firebase 설정이 실제 값인지 확인
+  const isFirebaseConfigured = () => {
+    const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+    const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
+    
+    // 데모 값이 아닌 실제 값인지 확인
+    return apiKey && 
+           apiKey !== "demo-key" && 
+           projectId && 
+           projectId !== "padlet-clone";
+  };
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError('');
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      // Firebase 설정이 없을 때 데모 모드로 진행
-      console.log('Firebase 설정 없음, 데모 모드로 진행');
-      // 데모 사용자 정보로 로그인 처리
-      const demoUser = {
-        uid: 'demo-user-id',
-        displayName: '데모 사용자',
-        email: 'demo@example.com',
-        photoURL: null
-      };
-      // 로컬 스토리지에 데모 사용자 정보 저장
-      localStorage.setItem('demoUser', JSON.stringify(demoUser));
-      // 페이지 새로고침으로 로그인 상태 변경
-      window.location.reload();
+    } catch (error: any) {
+      console.error('Google 로그인 오류:', error);
+      
+      // Firebase 설정이 데모 값인 경우에만 데모 모드로 전환
+      if (!isFirebaseConfigured()) {
+        console.log('Firebase 설정 없음, 데모 모드로 진행');
+        const demoUser = {
+          uid: 'demo-user-id',
+          displayName: '데모 사용자',
+          email: 'demo@example.com',
+          photoURL: null
+        };
+        localStorage.setItem('demoUser', JSON.stringify(demoUser));
+        window.location.reload();
+      } else {
+        setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -38,20 +53,23 @@ const Login: React.FC = () => {
     try {
       const provider = new GithubAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      // Firebase 설정이 없을 때 데모 모드로 진행
-      console.log('Firebase 설정 없음, 데모 모드로 진행');
-      // 데모 사용자 정보로 로그인 처리
-      const demoUser = {
-        uid: 'demo-user-id',
-        displayName: '데모 사용자',
-        email: 'demo@example.com',
-        photoURL: null
-      };
-      // 로컬 스토리지에 데모 사용자 정보 저장
-      localStorage.setItem('demoUser', JSON.stringify(demoUser));
-      // 페이지 새로고침으로 로그인 상태 변경
-      window.location.reload();
+    } catch (error: any) {
+      console.error('GitHub 로그인 오류:', error);
+      
+      // Firebase 설정이 데모 값인 경우에만 데모 모드로 전환
+      if (!isFirebaseConfigured()) {
+        console.log('Firebase 설정 없음, 데모 모드로 진행');
+        const demoUser = {
+          uid: 'demo-user-id',
+          displayName: '데모 사용자',
+          email: 'demo@example.com',
+          photoURL: null
+        };
+        localStorage.setItem('demoUser', JSON.stringify(demoUser));
+        window.location.reload();
+      } else {
+        setError('GitHub 로그인에 실패했습니다. 다시 시도해주세요.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -138,13 +156,16 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* 데모 정보 */}
+        {/* Firebase 설정 상태 표시 */}
         <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-            데모 모드
+            {isFirebaseConfigured() ? 'Firebase 연결됨' : '데모 모드'}
           </h3>
           <p className="text-xs text-blue-700 dark:text-blue-300">
-            실제 Firebase 설정 없이도 "데모 모드로 시작하기" 버튼을 클릭하여 모든 기능을 테스트할 수 있습니다.
+            {isFirebaseConfigured() 
+              ? '실제 Firebase 설정이 연결되어 있습니다. 소셜 로그인이 정상적으로 작동합니다.'
+              : 'Firebase 설정이 없어 데모 모드로 실행됩니다. "데모 모드로 시작하기" 버튼을 클릭하여 모든 기능을 테스트할 수 있습니다.'
+            }
           </p>
         </div>
       </div>
