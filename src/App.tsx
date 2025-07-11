@@ -13,14 +13,33 @@ import Workspace from './pages/Workspace';
 import Board from './pages/Board';
 import Loading from './components/Loading';
 
+// 데모 사용자 타입 정의
+interface DemoUser {
+  uid: string;
+  displayName: string;
+  email: string;
+  photoURL: string | null;
+}
+
 function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | DemoUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Firebase 인증 상태 감지
+  // Firebase 인증 상태 감지 및 데모 사용자 처리
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else {
+        // Firebase 사용자가 없으면 데모 사용자 확인
+        const demoUserStr = localStorage.getItem('demoUser');
+        if (demoUserStr) {
+          const demoUser = JSON.parse(demoUserStr);
+          setUser(demoUser);
+        } else {
+          setUser(null);
+        }
+      }
       setLoading(false);
     });
 

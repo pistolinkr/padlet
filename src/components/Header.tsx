@@ -12,8 +12,16 @@ import {
   Settings
 } from 'lucide-react';
 
+// 데모 사용자 타입 정의
+interface DemoUser {
+  uid: string;
+  displayName: string;
+  email: string;
+  photoURL: string | null;
+}
+
 interface HeaderProps {
-  user: User;
+  user: User | DemoUser;
 }
 
 const Header: React.FC<HeaderProps> = ({ user }) => {
@@ -34,7 +42,14 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      // Firebase 사용자인 경우
+      if ('uid' in user && user.uid !== 'demo-user-id') {
+        await signOut(auth);
+      } else {
+        // 데모 사용자인 경우
+        localStorage.removeItem('demoUser');
+        window.location.reload();
+      }
     } catch (error) {
       console.error('로그아웃 실패:', error);
     }
