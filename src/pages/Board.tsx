@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   Plus, 
@@ -9,7 +9,11 @@ import {
   Image,
   Link as LinkIcon,
   Smile,
-  Send
+  Send,
+  Palette,
+  Pin,
+  Copy,
+  Archive
 } from 'lucide-react';
 
 interface Note {
@@ -19,6 +23,7 @@ interface Note {
   color: string;
   createdAt: string;
   author: string;
+  isPinned?: boolean;
 }
 
 const Board: React.FC = () => {
@@ -44,11 +49,50 @@ const Board: React.FC = () => {
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNoteContent, setNewNoteContent] = useState('');
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [draggedNote, setDraggedNote] = useState<string | null>(null);
+  const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const colors = [
     'bg-yellow-200', 'bg-blue-200', 'bg-green-200', 
-    'bg-pink-200', 'bg-purple-200', 'bg-orange-200'
+    'bg-pink-200', 'bg-purple-200', 'bg-orange-200',
+    'bg-red-200', 'bg-indigo-200', 'bg-teal-200'
   ];
+
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  // 드래그 시작
+  const handleDragStart = (e: React.DragEvent, noteId: string) => {
+    setDraggedNote(noteId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  // 드래그 종료
+  const handleDragEnd = () => {
+    setDraggedNote(null);
+  };
+
+  // 드롭 처리
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedNote && boardRef.current) {
+      const rect = boardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      setNotes(notes.map(note => 
+        note.id === draggedNote 
+          ? { ...note, position: { x, y } }
+          : note
+      ));
+    }
+  };
+
+  // 드래그 오버 처리
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
 
   const handleAddNote = () => {
     if (newNoteContent.trim()) {
@@ -78,14 +122,57 @@ const Board: React.FC = () => {
     setSelectedNote(null);
   };
 
+  const handleColorChange = (noteId: string, color: string) => {
+    setNotes(notes.map(note => 
+      note.id === noteId ? { ...note, color } : note
+    ));
+    setShowColorPicker(null);
+  };
+
+  const handlePinNote = (noteId: string) => {
+    setNotes(notes.map(note => 
+      note.id === noteId ? { ...note, isPinned: !note.isPinned } : note
+    ));
+  };
+
+  const handleCopyNote = (note: Note) => {
+    navigator.clipboard.writeText(note.content);
+    // 복사 완료 알림
+    alert('노트가 클립보드에 복사되었습니다!');
+  };
+
+  const filteredNotes = notes.filter(note =>
+    note.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const pinnedNotes = filteredNotes.filter(note => note.isPinned);
+  const unpinnedNotes = filteredNotes.filter(note => !note.isPinned);
+
   return (
     <div className="h-full flex flex-col">
       {/* 보드 헤더 */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">아이디어 보드</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">창의적인 아이디어들을 자유롭게 작성해보세요</p>
+          <div className="flex items-center space-x-4">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">아이디어 보드</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">창의적인 아이디어들을 자유롭게 작성해보세요</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder="노트 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                {viewMode === 'grid' ? '📋' : '🔲'}
+              </button>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -104,46 +191,206 @@ const Board: React.FC = () => {
       </div>
 
       {/* 보드 영역 */}
-      <div className="flex-1 relative bg-gray-50 dark:bg-gray-900 overflow-hidden">
-        {/* 노트들 */}
-        {notes.map((note) => (
-          <div
-            key={note.id}
-            className={`absolute ${note.color} dark:bg-gray-700 rounded-lg p-4 shadow-lg cursor-move min-w-[200px] max-w-[300px]`}
-            style={{ left: note.position.x, top: note.position.y }}
-            onClick={() => setSelectedNote(note)}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">{note.author}</span>
-              <div className="flex items-center space-x-1">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedNote(note);
-                  }}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                >
-                  <Edit3 className="w-3 h-3" />
-                </button>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteNote(note.id);
-                  }}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
+      <div 
+        ref={boardRef}
+        className="flex-1 relative bg-gray-50 dark:bg-gray-900 overflow-auto"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+      >
+        {viewMode === 'grid' ? (
+          // 그리드 뷰
+          <>
+            {/* 고정된 노트들 */}
+            {pinnedNotes.map((note) => (
+              <div
+                key={note.id}
+                className={`absolute ${note.color} dark:bg-gray-700 rounded-lg p-4 shadow-lg cursor-move min-w-[200px] max-w-[300px] z-10 ${
+                  draggedNote === note.id ? 'opacity-50' : ''
+                }`}
+                style={{ left: note.position.x, top: note.position.y }}
+                draggable
+                onDragStart={(e) => handleDragStart(e, note.id)}
+                onDragEnd={handleDragEnd}
+                onClick={() => setSelectedNote(note)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{note.author}</span>
+                    {note.isPinned && <Pin className="w-3 h-3 text-red-500" />}
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowColorPicker(showColorPicker === note.id ? null : note.id);
+                      }}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Palette className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedNote(note);
+                      }}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNote(note.id);
+                      }}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {note.content}
+                </p>
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {note.createdAt}
+                </div>
+
+                {/* 색상 선택기 */}
+                {showColorPicker === note.id && (
+                  <div className="absolute top-0 left-0 mt-8 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                    <div className="grid grid-cols-3 gap-1">
+                      {colors.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => handleColorChange(note.id, color)}
+                          className={`w-6 h-6 rounded ${color} hover:scale-110 transition-transform`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-            <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-              {note.content}
-            </p>
-            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {note.createdAt}
-            </div>
+            ))}
+
+            {/* 일반 노트들 */}
+            {unpinnedNotes.map((note) => (
+              <div
+                key={note.id}
+                className={`absolute ${note.color} dark:bg-gray-700 rounded-lg p-4 shadow-lg cursor-move min-w-[200px] max-w-[300px] ${
+                  draggedNote === note.id ? 'opacity-50' : ''
+                }`}
+                style={{ left: note.position.x, top: note.position.y }}
+                draggable
+                onDragStart={(e) => handleDragStart(e, note.id)}
+                onDragEnd={handleDragEnd}
+                onClick={() => setSelectedNote(note)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{note.author}</span>
+                  <div className="flex items-center space-x-1">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowColorPicker(showColorPicker === note.id ? null : note.id);
+                      }}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Palette className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedNote(note);
+                      }}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNote(note.id);
+                      }}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {note.content}
+                </p>
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {note.createdAt}
+                </div>
+
+                {/* 색상 선택기 */}
+                {showColorPicker === note.id && (
+                  <div className="absolute top-0 left-0 mt-8 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                    <div className="grid grid-cols-3 gap-1">
+                      {colors.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => handleColorChange(note.id, color)}
+                          className={`w-6 h-6 rounded ${color} hover:scale-110 transition-transform`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </>
+        ) : (
+          // 리스트 뷰
+          <div className="p-6 space-y-4">
+            {filteredNotes.map((note) => (
+              <div
+                key={note.id}
+                className={`${note.color} dark:bg-gray-700 rounded-lg p-4 shadow-lg`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{note.author}</span>
+                    {note.isPinned && <Pin className="w-3 h-3 text-red-500" />}
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <button 
+                      onClick={() => handlePinNote(note.id)}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Pin className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={() => handleCopyNote(note)}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={() => setSelectedNote(note)}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteNote(note.id)}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                  {note.content}
+                </p>
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {note.createdAt}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
 
         {/* 새 노트 추가 모달 */}
         {isAddingNote && (

@@ -7,17 +7,23 @@ import {
   ChevronDown,
   Users,
   Star,
-  Settings
+  Settings,
+  Search,
+  Calendar,
+  Archive,
+  Trash2,
+  HelpCircle
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState({
     workspaces: true,
-    boards: true
+    boards: true,
+    tools: false
   });
   const location = useLocation();
 
-  const toggleSection = (section: 'workspaces' | 'boards') => {
+  const toggleSection = (section: 'workspaces' | 'boards' | 'tools') => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
@@ -28,19 +34,29 @@ const Sidebar: React.FC = () => {
     { icon: Home, label: '대시보드', path: '/' },
     { icon: Star, label: '즐겨찾기', path: '/favorites' },
     { icon: Users, label: '팀', path: '/teams' },
+    { icon: Calendar, label: '일정', path: '/calendar' },
     { icon: Settings, label: '설정', path: '/settings' }
   ];
 
   const workspaces = [
-    { id: '1', name: '개인 워크스페이스', color: 'bg-blue-500' },
-    { id: '2', name: '팀 프로젝트', color: 'bg-green-500' },
-    { id: '3', name: '학습 자료', color: 'bg-purple-500' }
+    { id: '1', name: '개인 워크스페이스', color: 'bg-blue-500', boardCount: 5 },
+    { id: '2', name: '팀 프로젝트', color: 'bg-green-500', boardCount: 3 },
+    { id: '3', name: '학습 자료', color: 'bg-purple-500', boardCount: 2 }
   ];
 
   const boards = [
-    { id: '1', name: '아이디어 보드', workspace: '1' },
-    { id: '2', name: '프로젝트 계획', workspace: '1' },
-    { id: '3', name: '디자인 참고', workspace: '2' }
+    { id: '1', name: '아이디어 보드', workspace: '1', isStarred: true },
+    { id: '2', name: '프로젝트 계획', workspace: '1', isStarred: false },
+    { id: '3', name: '디자인 참고', workspace: '2', isStarred: true },
+    { id: '4', name: '회의록', workspace: '1', isStarred: false },
+    { id: '5', name: '참고 자료', workspace: '3', isStarred: false }
+  ];
+
+  const tools = [
+    { icon: Search, label: '검색', path: '/search' },
+    { icon: Archive, label: '보관함', path: '/archive' },
+    { icon: Trash2, label: '휴지통', path: '/trash' },
+    { icon: HelpCircle, label: '도움말', path: '/help' }
   ];
 
   return (
@@ -92,10 +108,15 @@ const Sidebar: React.FC = () => {
                 <li key={workspace.id}>
                   <Link
                     to={`/workspace/${workspace.id}`}
-                    className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <div className={`w-3 h-3 rounded-full ${workspace.color}`}></div>
-                    <span className="text-sm">{workspace.name}</span>
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${workspace.color}`}></div>
+                      <span className="text-sm">{workspace.name}</span>
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {workspace.boardCount}
+                    </span>
                   </Link>
                 </li>
               ))}
@@ -129,10 +150,13 @@ const Sidebar: React.FC = () => {
                 <li key={board.id}>
                   <Link
                     to={`/board/${board.id}`}
-                    className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <FolderOpen className="w-4 h-4" />
-                    <span className="text-sm">{board.name}</span>
+                    <div className="flex items-center space-x-3">
+                      <FolderOpen className="w-4 h-4" />
+                      <span className="text-sm">{board.name}</span>
+                      {board.isStarred && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
+                    </div>
                   </Link>
                 </li>
               ))}
@@ -145,7 +169,46 @@ const Sidebar: React.FC = () => {
             </ul>
           )}
         </div>
+
+        {/* 도구 섹션 */}
+        <div className="mt-6">
+          <button
+            onClick={() => toggleSection('tools')}
+            className="flex items-center justify-between w-full px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <span className="font-medium">도구</span>
+            <ChevronDown 
+              className={`w-4 h-4 transition-transform ${
+                expandedSections.tools ? 'rotate-180' : ''
+              }`} 
+            />
+          </button>
+          
+          {expandedSections.tools && (
+            <ul className="mt-2 space-y-1">
+              {tools.map((tool) => (
+                <li key={tool.path}>
+                  <Link
+                    to={tool.path}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <tool.icon className="w-4 h-4" />
+                    <span className="text-sm">{tool.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </nav>
+
+      {/* 하단 정보 */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          <p>Padlet Clone v1.0.0</p>
+          <p className="mt-1">© 2024 Demo Project</p>
+        </div>
+      </div>
     </aside>
   );
 };

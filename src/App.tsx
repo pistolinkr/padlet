@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Workspace from './pages/Workspace';
 import Board from './pages/Board';
+import Settings from './pages/Settings';
 import Loading from './components/Loading';
 
 // 데모 사용자 타입 정의
@@ -78,6 +79,7 @@ function App() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/workspace/:id" element={<Workspace />} />
                   <Route path="/board/:id" element={<Board />} />
+                  <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </main>
