@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 사용자 프로필 규칙
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 워크스페이스 규칙
+    match /workspaces/{workspaceId} {
+      allow read, write: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.uid in resource.data.members
+      );
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+    }
+    
+    // 보드 규칙
+    match /boards/{boardId} {
+      allow read, write: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.uid in resource.data.members
+      );
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+    }
+    
+    // 노트 규칙
+    match /notes/{noteId} {
+      allow read, write: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        // 보드 멤버인지 확인
+        exists(/databases/$(database)/documents/boards/$(resource.data.boardId)) &&
+        (
+          get(/databases/$(database)/documents/boards/$(resource.data.boardId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in get(/databases/$(database)/documents/boards/$(resource.data.boardId)).data.members
+        )
+      );
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+    }
+    
+    // 기타 컬렉션은 인증된 사용자만 접근
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+} 

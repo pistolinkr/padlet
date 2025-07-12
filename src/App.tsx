@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from './firebase/config';
 import './App.css';
+
+// Contexts
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Components
 import Header from './components/Header';
@@ -14,38 +15,9 @@ import Board from './pages/Board';
 import Settings from './pages/Settings';
 import Loading from './components/Loading';
 
-// 데모 사용자 타입 정의
-interface DemoUser {
-  uid: string;
-  displayName: string;
-  email: string;
-  photoURL: string | null;
-}
-
-function App() {
-  const [user, setUser] = useState<User | DemoUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Firebase 인증 상태 감지 및 데모 사용자 처리
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-      } else {
-        // Firebase 사용자가 없으면 데모 사용자 확인
-        const demoUserStr = localStorage.getItem('demoUser');
-        if (demoUserStr) {
-          const demoUser = JSON.parse(demoUserStr);
-          setUser(demoUser);
-        } else {
-          setUser(null);
-        }
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+// 메인 앱 컴포넌트
+const AppContent: React.FC = () => {
+  const { user, loading } = useAuth();
 
   // 시스템 테마에 따라 다크모드 자동 적용
   useEffect(() => {
@@ -67,32 +39,40 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-        {user ? (
-          <div className="flex h-screen">
-            <Sidebar />
-            <div className="flex-1 flex flex-col">
-              <Header user={user} />
-              <main className="flex-1 overflow-auto">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/workspace/:id" element={<Workspace />} />
-                  <Route path="/board/:id" element={<Board />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </main>
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      {user ? (
+        <div className="flex h-screen">
+          <Sidebar />
+          <div className="flex-1 flex flex-col">
+            <Header user={user} />
+            <main className="flex-1 overflow-auto">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/workspace/:id" element={<Workspace />} />
+                <Route path="/board/:id" element={<Board />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
           </div>
-        ) : (
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        )}
-      </div>
-    </Router>
+        </div>
+      ) : (
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      )}
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 

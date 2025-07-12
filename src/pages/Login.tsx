@@ -1,90 +1,46 @@
 import React, { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
-import { auth } from '../firebase/config';
-import { Mail, Github, Chrome } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Mail, Github, Chrome, UserPlus } from 'lucide-react';
 
 const Login: React.FC = () => {
+  const { signInWithGoogle, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Firebase 설정이 실제 값인지 확인
-  const isFirebaseConfigured = () => {
-    const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
-    const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
-    
-    // 데모 값이 아닌 실제 값인지 확인
-    return apiKey && 
-           apiKey !== "demo-key" && 
-           projectId && 
-           projectId !== "padlet-clone";
-  };
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError('');
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithGoogle();
     } catch (error: any) {
       console.error('Google 로그인 오류:', error);
-      
-      // Firebase 설정이 데모 값인 경우에만 데모 모드로 전환
-      if (!isFirebaseConfigured()) {
-        console.log('Firebase 설정 없음, 데모 모드로 진행');
-        const demoUser = {
-          uid: 'demo-user-id',
-          displayName: '데모 사용자',
-          email: 'demo@example.com',
-          photoURL: null
-        };
-        localStorage.setItem('demoUser', JSON.stringify(demoUser));
-        window.location.reload();
-      } else {
-        setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
-      }
+      setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGithubSignIn = async () => {
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     setError('');
+    
     try {
-      const provider = new GithubAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      console.error('GitHub 로그인 오류:', error);
-      
-      // Firebase 설정이 데모 값인 경우에만 데모 모드로 전환
-      if (!isFirebaseConfigured()) {
-        console.log('Firebase 설정 없음, 데모 모드로 진행');
-        const demoUser = {
-          uid: 'demo-user-id',
-          displayName: '데모 사용자',
-          email: 'demo@example.com',
-          photoURL: null
-        };
-        localStorage.setItem('demoUser', JSON.stringify(demoUser));
-        window.location.reload();
+      if (isSignUp) {
+        await signUp(email, password, displayName);
       } else {
-        setError('GitHub 로그인에 실패했습니다. 다시 시도해주세요.');
+        // 이메일 로그인은 authService에서 구현 필요
+        setError('이메일 로그인 기능은 준비 중입니다.');
       }
+    } catch (error: any) {
+      setError(error.message || '로그인에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleDemoLogin = () => {
-    setIsLoading(true);
-    const demoUser = {
-      uid: 'demo-user-id',
-      displayName: '데모 사용자',
-      email: 'demo@example.com',
-      photoURL: null
-    };
-    localStorage.setItem('demoUser', JSON.stringify(demoUser));
-    window.location.reload();
   };
 
   return (
@@ -116,15 +72,6 @@ const Login: React.FC = () => {
               Google로 계속하기
             </button>
 
-            <button
-              onClick={handleGithubSignIn}
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Github className="w-5 h-5 mr-3" />
-              GitHub로 계속하기
-            </button>
-
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />
@@ -136,37 +83,85 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={handleDemoLogin}
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Mail className="w-5 h-5 mr-3" />
-              데모 모드로 시작하기
-            </button>
+            <form onSubmit={handleEmailSignIn} className="space-y-4">
+              {isSignUp && (
+                <div>
+                  <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    이름
+                  </label>
+                  <input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required={isSignUp}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                    placeholder="이름을 입력하세요"
+                  />
+                </div>
+              )}
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  이메일
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="이메일을 입력하세요"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  비밀번호
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="비밀번호를 입력하세요"
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    처리 중...
+                  </div>
+                ) : (
+                  <>
+                    {isSignUp ? <UserPlus className="w-4 h-4 mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+                    {isSignUp ? '회원가입' : '로그인'}
+                  </>
+                )}
+              </button>
+            </form>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              계정이 없으신가요?{' '}
-              <button className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300">
-                회원가입
+              {isSignUp ? '이미 계정이 있으신가요?' : '계정이 없으신가요?'}{' '}
+              <button 
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+              >
+                {isSignUp ? '로그인' : '회원가입'}
               </button>
             </p>
           </div>
-        </div>
-
-        {/* Firebase 설정 상태 표시 */}
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-            {isFirebaseConfigured() ? 'Firebase 연결됨' : '데모 모드'}
-          </h3>
-          <p className="text-xs text-blue-700 dark:text-blue-300">
-            {isFirebaseConfigured() 
-              ? '실제 Firebase 설정이 연결되어 있습니다. 소셜 로그인이 정상적으로 작동합니다.'
-              : 'Firebase 설정이 없어 데모 모드로 실행됩니다. "데모 모드로 시작하기" 버튼을 클릭하여 모든 기능을 테스트할 수 있습니다.'
-            }
-          </p>
         </div>
       </div>
     </div>

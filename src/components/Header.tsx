@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { User } from 'firebase/auth';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Bell, 
   Search, 
@@ -12,19 +10,8 @@ import {
   Settings
 } from 'lucide-react';
 
-// 데모 사용자 타입 정의
-interface DemoUser {
-  uid: string;
-  displayName: string;
-  email: string;
-  photoURL: string | null;
-}
-
-interface HeaderProps {
-  user: User | DemoUser;
-}
-
-const Header: React.FC<HeaderProps> = ({ user }) => {
+const Header: React.FC = () => {
+  const { user, signOut } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(
     document.documentElement.classList.contains('dark')
   );
@@ -42,14 +29,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
 
   const handleSignOut = async () => {
     try {
-      // Firebase 사용자인 경우
-      if ('uid' in user && user.uid !== 'demo-user-id') {
-        await signOut(auth);
-      } else {
-        // 데모 사용자인 경우
-        localStorage.removeItem('demoUser');
-        window.location.reload();
-      }
+      await signOut();
     } catch (error) {
       console.error('로그아웃 실패:', error);
     }
@@ -73,7 +53,10 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
         {/* 우측 메뉴 */}
         <div className="flex items-center space-x-4">
           {/* 알림 */}
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+          <button 
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            title="알림"
+          >
             <Bell className="w-5 h-5" />
           </button>
 

@@ -1,6 +1,22 @@
-# Getting Started with Create React App
+# Padlet Clone - Firebase 기반 협업 플랫폼
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Firebase를 백엔드로 사용하는 현대적인 협업 플랫폼입니다. 실시간 데이터 동기화, 파일 업로드, 사용자 인증 등의 기능을 제공합니다.
+
+## 주요 기능
+
+- 🔐 **Firebase Authentication**: Google 로그인, 이메일/비밀번호 회원가입
+- 📊 **Firestore Database**: 실시간 데이터 동기화
+- 📁 **Firebase Storage**: 이미지 업로드 및 관리
+- 🎨 **반응형 UI**: Tailwind CSS 기반 모던 디자인
+- 🌙 **다크모드**: 시스템 테마 자동 감지
+- ⚡ **실시간 협업**: 실시간 노트 편집 및 공유
+
+## 기술 스택
+
+- **Frontend**: React 18, TypeScript, Tailwind CSS
+- **Backend**: Firebase (Authentication, Firestore, Storage)
+- **상태 관리**: React Context API
+- **실시간 통신**: Firebase Realtime Database
 
 ## Available Scripts
 
