@@ -9,6 +9,7 @@ import {
 import AdvancedNoteEditor from '../components/AdvancedNoteEditor';
 import AISmartFeatures from '../components/AISmartFeatures';
 import RealTimeCollaboration from '../components/RealTimeCollaboration';
+import ImageUpload from '../components/ImageUpload';
 
 interface Note {
   id: string;
@@ -62,6 +63,7 @@ const Board: React.FC = () => {
   const [showAI, setShowAI] = useState(false);
   const [showCollaboration, setShowCollaboration] = useState(true);
   const [currentUser] = useState({ displayName: '사용자' });
+  const [backgroundImage, setBackgroundImage] = useState<string>('');
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,10 +149,24 @@ const Board: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <ImageUpload
+                onUpload={setBackgroundImage}
+                boardId={boardId || ''}
+                className="mr-2"
+              >
+                <Image className="w-4 h-4 mr-1" />
+                배경 설정
+              </ImageUpload>
+              <button 
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                title="설정"
+              >
                 <Settings className="w-4 h-4" />
               </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <button 
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                title="다운로드"
+              >
                 <Download className="w-4 h-4" />
               </button>
             </div>
@@ -158,7 +174,16 @@ const Board: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div 
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+        style={{
+          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: 'calc(100vh - 80px)'
+        }}
+      >
         {/* AI 스마트 기능 */}
         {showAI && (
           <div className="mb-6">
@@ -184,7 +209,10 @@ const Board: React.FC = () => {
                 className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <button 
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              title="필터"
+            >
               <Filter className="w-4 h-4" />
             </button>
           </div>
@@ -192,12 +220,14 @@ const Board: React.FC = () => {
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+              title="그리드 보기"
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
               className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+              title="리스트 보기"
             >
               <List className="w-4 h-4" />
             </button>
@@ -233,7 +263,10 @@ const Board: React.FC = () => {
                       {note.title}
                     </h3>
                   </div>
-                  <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <button 
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    title="더보기"
+                  >
                     <MoreVertical className="w-4 h-4" />
                   </button>
                 </div>

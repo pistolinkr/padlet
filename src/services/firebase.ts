@@ -12,7 +12,14 @@ import {
   serverTimestamp,
   onSnapshot
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { 
+  ref, 
+  uploadBytes, 
+  getDownloadURL, 
+  deleteObject,
+  listAll
+} from 'firebase/storage';
+import { db, storage } from '../firebase/config';
 import { User } from 'firebase/auth';
 
 // 타입 정의
@@ -35,6 +42,7 @@ export interface Board {
   ownerId: string;
   members: { [key: string]: string };
   isStarred: boolean;
+  backgroundImage?: string; // 배경 이미지 URL
   createdAt: any;
   updatedAt: any;
 }
@@ -47,6 +55,7 @@ export interface Note {
   boardId: string;
   ownerId: string;
   isPinned: boolean;
+  images?: string[]; // 이미지 URL 배열
   createdAt: any;
   updatedAt: any;
 }
@@ -207,5 +216,48 @@ export const realtimeService = {
       const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Note));
       callback(notes);
     });
+  }
+}; 
+
+// 스토리지 서비스
+export const storageService = {
+  // 파일 업로드
+  async uploadFile(file: File, path: string): Promise<string> {
+    const storageRef = ref(storage, path);
+    const snapshot = await uploadBytes(storageRef, file);
+    return await getDownloadURL(snapshot.ref);
+  },
+
+  // 파일 다운로드 URL 가져오기
+  async getFileURL(path: string): Promise<string> {
+    const storageRef = ref(storage, path);
+    return await getDownloadURL(storageRef);
+  },
+
+  // 파일 삭제
+  async deleteFile(path: string): Promise<void> {
+    const storageRef = ref(storage, path);
+    await deleteObject(storageRef);
+  },
+
+  // 폴더 내 모든 파일 목록 가져오기
+  async listFiles(folderPath: string): Promise<string[]> {
+    const folderRef = ref(storage, folderPath);
+    const result = await listAll(folderRef);
+    return result.items.map(item => item.fullPath);
+  },
+
+  // 이미지 업로드 (노트에 첨부)
+  async uploadNoteImage(file: File, boardId: string, noteId: string): Promise<string> {
+    const fileName = `${Date.now()}_${file.name}`;
+    const path = `boards/${boardId}/notes/${noteId}/images/${fileName}`;
+    return await this.uploadFile(file, path);
+  },
+
+  // 보드 배경 이미지 업로드
+  async uploadBoardBackground(file: File, boardId: string): Promise<string> {
+    const fileName = `background_${Date.now()}_${file.name}`;
+    const path = `boards/${boardId}/backgrounds/${fileName}`;
+    return await this.uploadFile(file, path);
   }
 }; 
