@@ -11,6 +11,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  signInWithGithub: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +32,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { signInWithGoogle, signUp, signInWithGithub, signIn, signOut, updateUserProfile } = authService;
 
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChanged(async (user) => {
@@ -53,17 +56,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signInWithGithubHandler = async () => {
     try {
-      await authService.signInWithEmail(email, password);
+      await signInWithGithub();
     } catch (error) {
       throw error;
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signIn = async (email: string, password: string) => {
     try {
-      await authService.signInWithGoogle();
+      await authService.signInWithEmail(email, password);
     } catch (error) {
       throw error;
     }
@@ -102,6 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     signIn,
     signInWithGoogle,
+    signInWithGithub: signInWithGithubHandler,
     signUp,
     signOut,
     updateProfile

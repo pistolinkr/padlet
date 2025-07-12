@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Mail, Github, Chrome, UserPlus } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const { signInWithGoogle, signUp } = useAuth();
+  const { signInWithGoogle, signInWithGithub, signUp, signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -17,8 +17,19 @@ const Login: React.FC = () => {
     try {
       await signInWithGoogle();
     } catch (error: any) {
-      console.error('Google 로그인 오류:', error);
       setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGithubSignIn = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      await signInWithGithub();
+    } catch (error: any) {
+      setError('GitHub 로그인에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -28,13 +39,11 @@ const Login: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
     try {
       if (isSignUp) {
         await signUp(email, password, displayName);
       } else {
-        // 이메일 로그인은 authService에서 구현 필요
-        setError('이메일 로그인 기능은 준비 중입니다.');
+        await signIn(email, password);
       }
     } catch (error: any) {
       setError(error.message || '로그인에 실패했습니다.');
@@ -71,6 +80,14 @@ const Login: React.FC = () => {
               <Chrome className="w-5 h-5 mr-3" />
               Google로 계속하기
             </button>
+            <button
+              onClick={handleGithubSignIn}
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Github className="w-5 h-5 mr-3" />
+              GitHub로 계속하기
+            </button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -100,7 +117,6 @@ const Login: React.FC = () => {
                   />
                 </div>
               )}
-              
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   이메일
@@ -115,7 +131,6 @@ const Login: React.FC = () => {
                   placeholder="이메일을 입력하세요"
                 />
               </div>
-              
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   비밀번호
@@ -130,7 +145,6 @@ const Login: React.FC = () => {
                   placeholder="비밀번호를 입력하세요"
                 />
               </div>
-              
               <button
                 type="submit"
                 disabled={isLoading}

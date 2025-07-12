@@ -7,6 +7,7 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   GoogleAuthProvider,
+  GithubAuthProvider,
   signInWithPopup,
   User as FirebaseUser
 } from 'firebase/auth';
@@ -39,6 +40,13 @@ export const authService = {
   // Google 로그인
   async signInWithGoogle(): Promise<FirebaseUser> {
     const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    return userCredential.user;
+  },
+
+  // GitHub 로그인
+  async signInWithGithub(): Promise<FirebaseUser> {
+    const provider = new GithubAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
     return userCredential.user;
   },
