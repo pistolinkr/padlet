@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { signInWithGoogle, signUp, signInWithGithub, signIn, signOut, updateUserProfile } = authService;
+  const { signInWithGoogle, signUp: signUpFromService, signInWithGithub, signIn: signInFromService, signOut: signOutFromService, updateUserProfile } = authService;
 
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChanged(async (user) => {
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      await authService.signInWithEmail(email, password);
+      await signInFromService(email, password);
     } catch (error) {
       throw error;
     }
@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signUp = async (email: string, password: string, displayName: string) => {
     try {
-      await authService.signUpWithEmail(email, password, displayName);
+      await signUpFromService(email, password, displayName);
     } catch (error) {
       throw error;
     }
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
-      await authService.signOut();
+      await signOutFromService();
     } catch (error) {
       throw error;
     }
